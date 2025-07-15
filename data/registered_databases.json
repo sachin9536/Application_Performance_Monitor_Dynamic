@@ -1,0 +1,1 @@
+{"DB_1": "mongodb://mongo1:27017", "DB_2": "mongodb://mongo2:27017", "random": "mongodb://admin:secret@localhost:27017", "enchante": "mongodb://localhost:27017 /", "new": "mongodb://localhost:27017"}

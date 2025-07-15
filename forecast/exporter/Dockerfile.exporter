@@ -1,0 +1,13 @@
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /forecast/exporter/app
+
+# Copy source code
+COPY app /forecast/exporter/app
+
+# Install dependencies (pymongo + pytz for timezone conversion)
+RUN pip install --no-cache-dir pymongo pytz
+
+# Run the exporter every 10 minutes
+CMD ["sh", "-c", "while true; do python export_metrics.py; sleep 600; done"]

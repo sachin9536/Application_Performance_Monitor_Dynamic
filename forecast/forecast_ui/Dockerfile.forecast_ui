@@ -1,0 +1,19 @@
+FROM python:3.10-slim
+
+WORKDIR /forecast/forecast_ui/app
+
+COPY app /forecast/forecast_ui/app
+
+# Install all dependencies required by load_forecast.py
+RUN pip install --no-cache-dir \
+    streamlit \
+    pandas \
+    prophet \
+    plotly \
+    pymongo \
+    openpyxl \
+    bson
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "load_forecast.py", "--server.port=8501", "--server.enableCORS=false"]

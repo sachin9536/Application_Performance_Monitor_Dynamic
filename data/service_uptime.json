@@ -1,0 +1,54 @@
+{
+  "eReadz": {
+    "first_seen": 1752315885.3149421,
+    "last_healthy": 1752565200.295205
+  },
+  "Ereads3": {
+    "first_seen": 1752315885.3942285,
+    "last_healthy": 1752328029.430908
+  },
+  "Ereads": {
+    "first_seen": 1752315885.432533,
+    "last_healthy": 1752328029.4826117
+  },
+  "Ereadz_2": {
+    "first_seen": 1752315885.4812582,
+    "last_healthy": 1752327779.165623
+  },
+  "Ereadz_3": {
+    "first_seen": 1752315885.5187514,
+    "last_healthy": 1752328029.5285678
+  },
+  "Ereadz1": {
+    "first_seen": 1752327829.6121445,
+    "last_healthy": 1752328096.8701622
+  },
+  "Ereadz": {
+    "first_seen": 1752328132.8587093,
+    "last_healthy": 1752585582.6416225
+  },
+  "Ereadz2": {
+    "first_seen": 1752407706.1997263,
+    "last_healthy": 1752415842.7371602
+  },
+  "eReadz_2": {
+    "first_seen": 1752472675.5574636,
+    "last_healthy": 1752565200.3514864
+  },
+  "eReadz_1": {
+    "first_seen": 1752472675.5831969,
+    "last_healthy": 1752565200.323726
+  },
+  "eReadz_frontend": {
+    "first_seen": 1752472675.608601,
+    "last_healthy": 1752473400.3339493
+  },
+  "eReadz_backend": {
+    "first_seen": 1752472675.6562412,
+    "last_healthy": 1752473400.359415
+  },
+  "eReadz_backend2": {
+    "first_seen": 1752472675.6823132,
+    "last_healthy": 1752473400.384963
+  }
+}
