@@ -1,56 +1,74 @@
 version: "3.9"
 
+volumes:
+  mongodb_data:
+  pgadmin_data:
+
+networks:
+  private_net:
+    driver: bridge
+
 services:
-  # ======================
-  # MongoDB Database
-  # ======================
   mongodb:
     image: mongo:5
     container_name: mongodb
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=secret
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
     volumes:
       - mongodb_data:/data/db
     networks:
       - private_net
     healthcheck:
       test:
-        [
-          "CMD",
-          "mongosh",
-          "--username",
-          "admin",
-          "--password",
-          "secret",
-          "--authenticationDatabase",
-          "admin",
-          "--eval",
-          "db.adminCommand('ping')",
-        ]
+        ["CMD", "mongosh", "--username", "${MONGO_USER}", "--password", "${MONGO_PASS}", "--authenticationDatabase", "${MONGO_AUTH_DB}", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
 
-  # ======================
-  # Mongo Express UI
-  # ======================
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    networks:
+      - private_net
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - private_net
+
   mongo-express:
     image: mongo-express:latest
     container_name: mongo-express
     ports:
       - "8081:8081"
     environment:
-      - ME_CONFIG_MONGODB_SERVER=mongodb
-      - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=secret
-      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
       - ME_CONFIG_BASICAUTH=false
-      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_USER}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASS}
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=${MONGO_AUTH_DB}
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_PORT=${MONGO_PORT}
+      - ME_CONFIG_MONGODB_SERVER=${MONGO_HOST}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -64,92 +82,12 @@ services:
     networks:
       - private_net
 
-  # ======================
-  # Prometheus Monitoring
-  # ======================
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-      - private_net
-
-  # ======================
-  # Monitoring Engine (Backend API) - Production Mode
-  # ======================
-  monitoring_engine:
-    build:
-      context: .
-      dockerfile: Dockerfile.monitoring
-    container_name: monitoring_engine
-    ports:
-      - "8000:8000"
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      prometheus:
-        condition: service_started
-    networks:
-      - private_net
-    environment:
-      - MONGO_URI=mongodb://admin:secret@mongodb:27017
-      - JWT_SECRET=2004@
-      - GROQ_API_KEY=GROQ_API_KEY
-      - GROQ_MODEL=llama3-8b-8192
-      - PROMETHEUS_URL=http://prometheus:9090
-      - SENDGRID_API_KEY=your_sendgrid_api_key
-      - ALERT_EMAIL_FROM=your_email@example.com
-      - ALERT_EMAIL_TO=your_email@example.com
-      - DEMO_MODE=0
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 30s
-
-  # ======================
-  # Frontend React App - Production Mode
-  # ======================
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    ports:
-      - "3000:3000"
-    networks:
-      - private_net
-    depends_on:
-      monitoring_engine:
-        condition: service_healthy
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
-
-  postgres:
-    image: postgres:14
-    container_name: postgres
-    environment:
-      POSTGRES_USER: testuser
-      POSTGRES_PASSWORD: testpass
-      POSTGRES_DB: testdb
-    ports:
-      - "5432:5432"
-    networks:
-      - private_net
-
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: testuser@example.com
-      PGADMIN_DEFAULT_PASSWORD: testpass
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - "8083:80"
     depends_on:
@@ -165,32 +103,76 @@ services:
       retries: 3
       start_period: 30s
 
-  mysql:
-    image: mysql:8
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: testdb
-      MYSQL_USER: testuser
-      MYSQL_PASSWORD: testpass
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - private_net
-
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
     environment:
       PMA_HOST: mysql
-      PMA_USER: testuser
-      PMA_PASSWORD: testpass
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "8082:80"
     depends_on:
       - mysql
+    networks:
+      - private_net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - private_net
+
+  monitoring_engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitoring
+    container_name: monitoring_engine
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    environment:
+      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM}
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO}
+      - DEMO_MODE=0
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL}
+      - JWT_SECRET=${JWT_SECRET}
+      - MONGO_URI=${MONGO_URI}
+      - PROMETHEUS_URL=${PROMETHEUS_URL}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - private_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      monitoring_engine:
+        condition: service_healthy
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
     networks:
       - private_net
 
@@ -202,16 +184,16 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ./forecast:/forecast # ✅ Mount forecast folder
-    environment:
-      - MONGO_HOST=mongodb
-      - MONGO_PORT=27017
-      - MONGO_USER=admin
-      - MONGO_PASS=secret
-      - MONGO_AUTH_DB=admin
-      - DB_NAME=appvital
-      - COLLECTION_NAME=metrics_history
+      - ./forecast:/forecast
     working_dir: /forecast/forecast_ui/app
+    environment:
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASS=${MONGO_PASS}
+      - MONGO_AUTH_DB=${MONGO_AUTH_DB}
+      - MONGO_HOST=${MONGO_HOST}
+      - MONGO_PORT=${MONGO_PORT}
+      - DB_NAME=${DB_NAME}
+      - COLLECTION_NAME=${COLLECTION_NAME}
     networks:
       - private_net
 
@@ -219,24 +201,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.controller
+    container_name: controller
     environment:
+      - CONTROLLER_USER_EMAIL=${CONTROLLER_USER_EMAIL}
+      - CONTROLLER_USER_PASSWORD=${CONTROLLER_USER_PASSWORD}
       - MONITORING_ENGINE_URL=http://monitoring_engine:8000
-      - CONTROLLER_USER_EMAIL=testuser@example.com
-      - CONTROLLER_USER_PASSWORD=testpass123
-      # Add other env vars as needed
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       monitoring_engine:
         condition: service_healthy
-    volumes:
-      - ./logs:/app/logs
     restart: unless-stopped
     networks:
       - private_net
-
-volumes:
-  mongodb_data:
-  pgadmin_data:
-
-networks:
-  private_net:
-    driver: bridge

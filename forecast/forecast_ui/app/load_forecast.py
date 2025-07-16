@@ -53,9 +53,13 @@ def run_prophet_forecast(df, period, freq):
     future = model.make_future_dataframe(periods=period, freq=freq)
     forecast = model.predict(future)
     forecast["Forecasted"] = forecast["yhat"].clip(lower=0)
+    forecast["yhat"] = forecast["yhat"].clip(lower=0)
+    forecast["yhat_lower"] = forecast["yhat_lower"].clip(lower=0)
+    forecast["yhat_upper"] = forecast["yhat_upper"].clip(lower=0)
     return forecast
 
 def plot_forecast(real_df, forecast_df, title, x_label):
+    real_df = real_df.rename(columns={"timestamp": "ds", "value": "y"}).copy()
     merged = pd.merge(
         forecast_df[["ds", "Forecasted"]],
         real_df.rename(columns={"y": "Real"}),
@@ -78,7 +82,7 @@ def plot_forecast(real_df, forecast_df, title, x_label):
     )
     return fig
 
-def export_forecast_to_excel(forecast):
+def export_forecast_to_excel(forecast, selected_service, selected_metric):
     buffer = io.BytesIO()
     export_df = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].rename(columns={
         'ds': 'Date',
@@ -86,62 +90,111 @@ def export_forecast_to_excel(forecast):
         'yhat_lower': 'Lower Bound',
         'yhat_upper': 'Upper Bound'
     })
+    export_df['Date'] = export_df['Date'].dt.strftime('%Y-%m-%d %H:%M')
+    export_df.insert(0, 'Service', selected_service)
+    export_df.insert(1, 'Metric', selected_metric)
     export_df.to_excel(buffer, index=False, engine='openpyxl')
     return buffer
+
 
 def send_email_with_attachment(recipient, buffer, subject):
     msg = EmailMessage()
     msg['Subject'] = subject
-    msg['From'] = 'your_email@gmail.com'
+    msg['From'] = 'elegancia24by7@gmail.com'
     msg['To'] = recipient
     msg.set_content('Attached is the forecast.')
+
     buffer.seek(0)
     msg.add_attachment(buffer.read(), maintype='application', subtype='octet-stream', filename='forecast.xlsx')
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login('your_email@gmail.com', 'your_app_password')
+    with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+        smtp.starttls()
+        smtp.login('elegancia24by7@gmail.com', 'ibffqoteknrwhvux')
         smtp.send_message(msg)
 
+
+# --- Streamlit Setup ---
 st.set_page_config(page_title="Service Load Forecast", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
-    html, body, .stApp, .main, .block-container {
-        background-color: white !important;
-        color: black !important;
-    }
-    label, .stSelectbox label, .stMultiSelect label,
-    .css-1r6slb0, .css-1v0mbdj, .css-1oykptf {
-        background-color: white !important;
-        color: black !important;
-        padding: 0.3rem 0.6rem;
-        font-weight: 600;
-        display: inline-block;
-        border-radius: 4px;
-    }
-    div[data-baseweb="select"] > div {
-        background-color: #1e1e1e !important;
-        color: white !important;
-    }
-    div[data-baseweb="select"] input {
-        color: white !important;
-    }
-    div[data-baseweb="menu"] {
-        background-color: #1e1e1e !important;
-    }
-    div[data-baseweb="menu"] div[role="option"] {
-        color: white !important;
-    }
-    .stButton button, .stDownloadButton button {
-        background-color: #1e1e1e !important;
-        color: white !important;
-        border: 1px solid #444 !important;
-    }
-    .stTextInput input {
-        background-color: #1e1e1e !important;
-        color: white !important;
-    }
+/* Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+html, body, .stApp {
+    font-family: 'Inter', sans-serif;
+    background-color: #f9fafb !important; /* Tailwind's gray-50 */
+    color: #111827 !important;           /* Tailwind's gray-900 */
+}
+
+/* Headings and text */
+h1, h2, h3, h4, h5, h6, label {
+    color: #111827 !important;
+}
+
+/* Card styles */
+.stContainer, .main, .block-container {
+    background-color: #ffffff !important; /* white */
+    border: 1px solid #e5e7eb;            /* gray-200 */
+    border-radius: 0.5rem;                /* rounded-lg */
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* shadow-sm */
+}
+
+/* Selectbox and Multiselect input */
+div[data-baseweb="select"] > div {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important; /* gray-300 */
+    border-radius: 0.375rem;
+}
+
+/* Dropdown menu */
+div[data-baseweb="menu"] {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+/* Dropdown options */
+div[data-baseweb="menu"] div[role="option"] {
+    color: #111827 !important;
+}
+
+/* Text input */
+.stTextInput input {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.375rem;
+}
+
+/* Buttons */
+.stButton button, .stDownloadButton button {
+    background-color: #2563eb !important; /* primary-600 */
+    color: #ffffff !important;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    border: none;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.stButton button:hover, .stDownloadButton button:hover {
+    background-color: #1d4ed8 !important; /* primary-700 */
+}
+
+/* Plotly chart override */
+.plot-container {
+    background-color: #111827 !important; /* dark mode for plot */
+    border-radius: 0.5rem;
+}
+
+.plotly-graph-div .xtick text,
+.plotly-graph-div .ytick text,
+.plotly-graph-div .legend text {
+    fill: #ffffff !important;
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 st.title("📊 Service Load Forecast Dashboard")
 
@@ -206,9 +259,10 @@ for selected_metric in selected_metrics:
     else:
         st.warning(f"Not enough data for monthly forecast of {selected_metric}")
 
+# Export & Email
 st.subheader('📤 Export Forecast Data')
 if latest_forecast is not None:
-    buffer = export_forecast_to_excel(latest_forecast)
+    buffer = export_forecast_to_excel(latest_forecast, selected_service, selected_metric)
     st.download_button('📥 Download Forecast as Excel', data=buffer.getvalue(), file_name='forecast.xlsx')
 
     st.subheader('📧 Email Forecast Summary')
