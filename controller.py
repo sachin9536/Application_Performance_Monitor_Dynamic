@@ -79,6 +79,17 @@ async def fetch_registered_services(session, jwt_token):
         log_json("ERROR", "Exception fetching registered services", error=str(e))
         return []
 
+async def register_user(session):
+    register_url = f"{MONITORING_ENGINE_URL}/register"
+    payload = {"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD}
+    async with session.post(register_url, json=payload) as resp:
+        if resp.status in (200, 201):
+            print("User registered (or already exists).")
+        else:
+            # Ignore error if user already exists
+            data = await resp.text()
+            print(f"Registration response: {resp.status} {data}")
+
 # Add a global loop counter
 global_loop_count = 0
 
@@ -204,6 +215,7 @@ async def main():
     start_time = time.time()
     loop_count = 0
     async with aiohttp.ClientSession() as session:
+        await register_user(session)
         jwt_token = await get_jwt_token(session)
         if not jwt_token:
             print("Failed to obtain JWT token. Exiting.")
