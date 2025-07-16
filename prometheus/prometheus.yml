@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'auth_service'
+    static_configs:
+      - targets: ['auth_service:8002']
+        labels:
+          service: 'auth'
+
+  - job_name: 'order_service'
+    static_configs:
+      - targets: ['order_service:8004']
+        labels:
+          service: 'order'
+
+  - job_name: 'catalog_service'
+    static_configs:
+      - targets: ['catalog_service:8006']
+        labels:
+          service: 'catalog'

@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+*.sqlite3
+*.db
+
+# VSCode
+.vscode/
+
+# Docker
+*.pid
+*.sock
+*.log
+logs/
+app/logs/
+
+# Node.js
+node_modules/
+.cache/
+build/
+dist/
+frontend/node_modules/
+frontend/.next/
+frontend/build/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Misc
+*.swp
+*.bak
+*.tmp
+*.orig
+
+# Ignore compiled JS map files
+*.map
+
+# Ignore Jupyter/IPython
+.ipynb_checkpoints/
+
+# Ignore local datanode_modules/
+frontend/node_modules/
+.cache/
+frontend/.next/
+frontend/build/
+frontend/dist/
+mongo-data/
+frontend/node_modules/.cache/
+# Ignore Python virtual environments
+.venv/
+venv/

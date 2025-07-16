@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+bcrypt
+python-dotenv
+email-validator
+prometheus-client
+psutil
+motor==3.3.1
+pymongo==4.5.0
+python-jose[cryptography]
+python-dateutil
+pydantic[email]
+email-validator

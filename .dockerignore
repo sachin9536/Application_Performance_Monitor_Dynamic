@@ -1,0 +1,25 @@
+# Ignore node_modules everywhere
+**/node_modules
+# Ignore Python cache
+**/__pycache__
+# Ignore build artifacts
+**/build
+# Ignore logs
+logs
+# Ignore .git and other VCS
+.git
+.gitignore
+# Ignore Docker-related files not needed in build
+docker-compose.yml
+docker-compose.yaml
+Dockerfile
+Dockerfile.*
+# Ignore frontend build output
+frontend/build
+# Ignore anything else not needed
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log 
