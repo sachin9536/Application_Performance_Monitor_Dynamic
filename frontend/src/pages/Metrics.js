@@ -160,7 +160,7 @@ const Metrics = () => {
         // Format time series for charts (convert UTC to local time)
         setErrorRateSeries(
           errorRateData.map((d) => ({
-            time: new Date(d.time).toLocaleTimeString([], {
+            time: new Date(d.time * 1000).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             }),
@@ -169,7 +169,7 @@ const Metrics = () => {
         );
         setHttpRequestsSeries(
           httpRequestsData.map((d) => ({
-            time: new Date(d.time).toLocaleTimeString([], {
+            time: new Date(d.time * 1000).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             }),
@@ -178,7 +178,7 @@ const Metrics = () => {
         );
         setResponseTimeSeries(
           responseTimeData.map((d) => ({
-            time: new Date(d.time).toLocaleTimeString([], {
+            time: new Date(d.time * 1000).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             }),
@@ -187,41 +187,45 @@ const Metrics = () => {
         );
         setCpuUsageSeries(
           cpuUsageData.map((d) => ({
-            time: d.time,
+            time: new Date(d.time * 1000).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
             value: d.cpu_percent,
           }))
         );
         setMemoryUsageSeries(
           memoryUsageData.map((d) => ({
-            time: d.time,
+            time: new Date(d.time * 1000).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
             value: d.memory_mb,
           }))
         );
-        // Response code pie chart
-        const totalCodes = Object.values(responseCodeDist).reduce(
-          (a, b) => a + b,
-          0
-        );
+        // For 'All Services', aggregate response codes into Success and Error for the pie chart
+        const successCount =
+          (responseCodeDist["200"] || 0) +
+          (responseCodeDist["201"] || 0) +
+          (responseCodeDist["202"] || 0) +
+          (responseCodeDist["204"] || 0);
+        const errorCount =
+          (responseCodeDist["400"] || 0) +
+          (responseCodeDist["401"] || 0) +
+          (responseCodeDist["403"] || 0) +
+          (responseCodeDist["404"] || 0) +
+          (responseCodeDist["500"] || 0) +
+          (responseCodeDist["502"] || 0) +
+          (responseCodeDist["503"] || 0);
         setResponseCodeData([
           {
-            name: "2xx Success",
-            value: responseCodeDist["200"] || 0,
+            name: "Success",
+            value: successCount,
             color: colors.success,
           },
           {
-            name: "4xx Client Error",
-            value:
-              (responseCodeDist["400"] || 0) +
-              (responseCodeDist["401"] || 0) +
-              (responseCodeDist["404"] || 0),
-            color: colors.warning,
-          },
-          {
-            name: "5xx Server Error",
-            value:
-              (responseCodeDist["500"] || 0) +
-              (responseCodeDist["502"] || 0) +
-              (responseCodeDist["503"] || 0),
+            name: "Error",
+            value: errorCount,
             color: colors.danger,
           },
         ]);
@@ -484,30 +488,19 @@ const Metrics = () => {
     selectedService === "all" ? httpRequestsSeries : serviceRequestsSeries
   ).map((d) => ({
     ...d,
-    time: new Date(d.time).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    // time is already formatted as a string, do not re-convert
     value: d.total !== undefined ? d.total : d.value,
   }));
   const formattedResponseTimeSeries = (
     selectedService === "all" ? responseTimeSeries : serviceResponseTimeSeries
   ).map((d) => ({
     ...d,
-    time: new Date(d.time).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
     value: d.avg_response_time_ms || d.value,
   }));
   const formattedErrorsSeries = (
     selectedService === "all" ? errorRateSeries : serviceErrorsSeries
   ).map((d) => ({
     ...d,
-    time: new Date(d.time).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
     value: d.errors !== undefined ? d.errors : d.value,
   }));
 
@@ -794,224 +787,6 @@ const Metrics = () => {
           </div>
         )}
       </div>
-
-      {/* System Metrics - Only show for "All Services" */}
-      {selectedService === "all" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* CPU Usage */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">CPU Usage Over Time</h2>
-            </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={cpuUsageSeries}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="time"
-                  tickFormatter={(t) => {
-                    const date = new Date(t);
-                    return windowValue.endsWith("h") ||
-                      windowValue.endsWith("m")
-                      ? date.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : date.toLocaleDateString();
-                  }}
-                />
-                <YAxis />
-                <Tooltip formatter={(value) => [`${value}%`, "CPU Usage"]} />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke={colors.primary}
-                  fill={colors.primary}
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Memory Usage */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Memory Usage Over Time</h2>
-            </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={memoryUsageSeries}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="time"
-                  tickFormatter={(t) => {
-                    const date = new Date(t);
-                    return windowValue.endsWith("h") ||
-                      windowValue.endsWith("m")
-                      ? date.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : date.toLocaleDateString();
-                  }}
-                />
-                <YAxis />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke={colors.success}
-                  fill={colors.success}
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Prometheus Metrics Section - Only show for "All Services" */}
-      {selectedService === "all" && prometheusData && (
-        <div className="card mt-8 animate-fadeIn">
-          <div className="card-header flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <ChartBarIcon className="w-6 h-6 text-primary-600" />
-              <h2 className="card-title">Prometheus Metrics</h2>
-            </div>
-            <span
-              className={
-                prometheusData?.status === "healthy"
-                  ? "text-success-700 bg-success-100 px-3 py-1 rounded-full text-xs font-semibold"
-                  : "text-danger-700 bg-danger-100 px-3 py-1 rounded-full text-xs font-semibold"
-              }
-            >
-              {prometheusData?.status === "healthy" ? "Healthy" : "Unhealthy"}
-            </span>
-          </div>
-          <div className="p-6 space-y-6">
-            {/* Scrape Targets */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                <ServerIcon className="w-5 h-5 text-primary-500 mr-2" />
-                Scrape Targets
-              </h3>
-              {prometheusData?.targets && prometheusData.targets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {prometheusData.targets.map((target, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 shadow-sm"
-                    >
-                      <div>
-                        <div className="font-medium text-gray-800 flex items-center">
-                          <ServerIcon className="w-4 h-4 text-primary-400 mr-1" />
-                          {target.labels.job || target.labels.service}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {target.scrapeUrl}
-                        </div>
-                      </div>
-                      <span
-                        className={
-                          target.health === "up"
-                            ? "text-success-700 bg-success-100 px-3 py-1 rounded-full text-xs font-semibold"
-                            : "text-danger-700 bg-danger-100 px-3 py-1 rounded-full text-xs font-semibold"
-                        }
-                      >
-                        {target.health}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No Prometheus targets found.</p>
-              )}
-            </div>
-            {/* Available Metrics */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                <ChartBarIcon className="w-5 h-5 text-primary-500 mr-2" />
-                Available Metrics
-              </h3>
-              {prometheusData?.available_metrics &&
-              prometheusData.available_metrics.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {prometheusData.available_metrics
-                    .slice(0, 20)
-                    .map((metric, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-primary-50 text-primary-700 px-2 py-1 rounded text-xs font-mono border border-primary-100 shadow-sm hover:bg-primary-100 transition-colors cursor-pointer"
-                        title={metric}
-                      >
-                        {metric}
-                      </span>
-                    ))}
-                  {prometheusData.available_metrics.length > 20 && (
-                    <span className="text-gray-500">
-                      +{prometheusData.available_metrics.length - 20} more
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-500">No metrics found.</p>
-              )}
-            </div>
-            {/* Metrics Summary */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                <ExclamationTriangleIcon className="w-5 h-5 text-warning-500 mr-2" />
-                Metrics Summary
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-3 bg-primary-50 rounded-lg text-center shadow-sm">
-                  <div className="text-sm text-gray-500 flex items-center justify-center">
-                    <ChartBarIcon className="w-4 h-4 text-primary-400 mr-1" />
-                    HTTP Requests
-                  </div>
-                  <div className="text-lg font-bold text-gray-900">
-                    {prometheusData?.metrics_summary?.http_requests}
-                  </div>
-                </div>
-                <div className="p-3 bg-success-50 rounded-lg text-center shadow-sm">
-                  <div className="text-sm text-gray-500 flex items-center justify-center">
-                    <ClockIcon className="w-4 h-4 text-success-400 mr-1" />
-                    Auth Attempts
-                  </div>
-                  <div className="text-lg font-bold text-gray-900">
-                    {prometheusData?.metrics_summary?.auth_attempts}
-                  </div>
-                </div>
-                <div className="p-3 bg-primary-50 rounded-lg text-center shadow-sm">
-                  <div className="text-sm text-gray-500 flex items-center justify-center">
-                    <ChartBarIcon className="w-4 h-4 text-primary-400 mr-1" />
-                    JWT Tokens
-                  </div>
-                  <div className="text-lg font-bold text-gray-900">
-                    {prometheusData?.metrics_summary?.jwt_tokens}
-                  </div>
-                </div>
-                <div className="p-3 bg-success-50 rounded-lg text-center shadow-sm">
-                  <div className="text-sm text-gray-500 flex items-center justify-center">
-                    <ChartBarIcon className="w-4 h-4 text-success-400 mr-1" />
-                    DB Operations
-                  </div>
-                  <div className="text-lg font-bold text-gray-900">
-                    {prometheusData?.metrics_summary?.db_operations}
-                  </div>
-                </div>
-                <div className="p-3 bg-danger-50 rounded-lg text-center shadow-sm col-span-2 md:col-span-1">
-                  <div className="text-sm text-gray-500 flex items-center justify-center">
-                    <ExclamationTriangleIcon className="w-4 h-4 text-danger-400 mr-1" />
-                    Errors
-                  </div>
-                  <div className="text-lg font-bold text-danger-700">
-                    {prometheusData?.metrics_summary?.errors}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

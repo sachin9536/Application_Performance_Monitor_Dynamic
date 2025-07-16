@@ -1872,10 +1872,9 @@ async def error_rate_timeseries(
             continue
         # Robust bucket start calculation
         bucket_start_ts = int((log_time.timestamp() // interval_seconds) * interval_seconds)
-        bucket_key = datetime.utcfromtimestamp(bucket_start_ts).strftime("%Y-%m-%dT%H:%M:00Z")
-        buckets[bucket_key]["total"] += 1
+        buckets[bucket_start_ts]["total"] += 1
         if log.get("level") == "ERROR" or ("error" in log.get("message", "").lower()):
-            buckets[bucket_key]["errors"] += 1
+            buckets[bucket_start_ts]["errors"] += 1
     # Format result
     result = []
     for bucket in sorted(buckets.keys()):
@@ -1929,8 +1928,7 @@ async def http_requests_timeseries(
         if log_time < start_time or log_time > now:
             continue
         bucket_start_ts = int((log_time.timestamp() // interval_seconds) * interval_seconds)
-        bucket_key = datetime.utcfromtimestamp(bucket_start_ts).strftime("%Y-%m-%dT%H:%M:00Z")
-        buckets[bucket_key]["total"] += 1
+        buckets[bucket_start_ts]["total"] += 1
     result = []
     for bucket in sorted(buckets.keys()):
         result.append({
@@ -1977,9 +1975,8 @@ async def response_time_timeseries(
         if log_time < start_time or log_time > now:
             continue
         bucket_start_ts = int((log_time.timestamp() // interval_seconds) * interval_seconds)
-        bucket_key = datetime.utcfromtimestamp(bucket_start_ts).strftime("%Y-%m-%dT%H:%M:00Z")
-        buckets[bucket_key]["count"] += 1
-        buckets[bucket_key]["sum"] += latency
+        buckets[bucket_start_ts]["count"] += 1
+        buckets[bucket_start_ts]["sum"] += latency
     result = []
     for bucket in sorted(buckets.keys()):
         count = buckets[bucket]["count"]
@@ -2122,7 +2119,7 @@ async def response_code_distribution(
     code_counts = {}
     for log in logs:
         ts = log.get("timestamp")
-        code = str(log.get("status_code"))
+        code = str(log.get("status_code") or log.get("status"))
         if not ts or not code:
             continue
         try:
@@ -2471,8 +2468,7 @@ async def service_requests_timeseries(
         if log_time < start_time or log_time > now:
             continue
         bucket_start_ts = int((log_time.timestamp() // interval_seconds) * interval_seconds)
-        bucket_key = datetime.utcfromtimestamp(bucket_start_ts).strftime("%Y-%m-%dT%H:%M:00Z")
-        buckets[bucket_key]["total"] += 1
+        buckets[bucket_start_ts]["total"] += 1
     result = []
     for bucket in sorted(buckets.keys()):
         result.append({
@@ -2522,9 +2518,8 @@ async def service_response_time_timeseries(
         if log_time < start_time or log_time > now:
             continue
         bucket_start_ts = int((log_time.timestamp() // interval_seconds) * interval_seconds)
-        bucket_key = datetime.utcfromtimestamp(bucket_start_ts).strftime("%Y-%m-%dT%H:%M:00Z")
-        buckets[bucket_key]["count"] += 1
-        buckets[bucket_key]["sum"] += latency
+        buckets[bucket_start_ts]["count"] += 1
+        buckets[bucket_start_ts]["sum"] += latency
     result = []
     for bucket in sorted(buckets.keys()):
         count = buckets[bucket]["count"]
@@ -2578,8 +2573,7 @@ async def service_errors_timeseries(
             continue
         if log.get("level") == "ERROR" or "error" in log.get("message", "").lower():
             bucket_start_ts = int((log_time.timestamp() // interval_seconds) * interval_seconds)
-            bucket_key = datetime.utcfromtimestamp(bucket_start_ts).strftime("%Y-%m-%dT%H:%M:00Z")
-            buckets[bucket_key]["errors"] += 1
+            buckets[bucket_start_ts]["errors"] += 1
     result = []
     for bucket in sorted(buckets.keys()):
         result.append({
@@ -2811,8 +2805,7 @@ async def service_errors_timeseries(
             continue
         if log.get("level") == "ERROR" or "error" in log.get("message", "").lower():
             bucket_start_ts = int((log_time.timestamp() // interval_seconds) * interval_seconds)
-            bucket_key = datetime.utcfromtimestamp(bucket_start_ts).strftime("%Y-%m-%dT%H:%M:00Z")
-            buckets[bucket_key]["errors"] += 1
+            buckets[bucket_start_ts]["errors"] += 1
     result = []
     for bucket in sorted(buckets.keys()):
         result.append({
