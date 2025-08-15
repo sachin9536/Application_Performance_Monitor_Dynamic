@@ -85,7 +85,7 @@ A lightweight monitoring solution for any service that exposes Prometheus metric
    ```
 
 3. **Access the dashboard**
-   - Open http://localhost:8080 in your browser
+   - Open http://localhost:3000 in your browser
 
 ### Register a Service
 
@@ -119,7 +119,7 @@ A lightweight monitoring solution for any service that exposes Prometheus metric
 
 2. **Register your service** with the monitoring platform:
    ```bash
-   curl -X POST http://localhost:8080/api/services/register \
+   curl -X POST http://localhost:8000/api/services/register \
      -H "Content-Type: application/json" \
      -d '{"name": "my-service", "url": "http://your-service:3000"}'
    ```
