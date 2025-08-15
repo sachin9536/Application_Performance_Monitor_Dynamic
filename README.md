@@ -1,215 +1,176 @@
-# 🏥 Health Monitoring System for Microservices
+# Dynamic Service Monitoring
 
-A comprehensive, enterprise-grade health monitoring system for microservices architecture built with FastAPI, MongoDB, Docker, and Prometheus. Features AI-powered root cause analysis using Ollama LLaMA 3 and a modern frontend dashboard.
+A lightweight monitoring solution for any service that exposes Prometheus metrics. Easily register and monitor your services with a simple dashboard.
 
----
+## Key Features
 
-## 🚀 Features
+- **Dynamic Service Registration**
+  - Monitor any service with a `/metrics` endpoint
+  - Automatic service discovery
+  - Simple API for registration
 
-- **Microservices:** Auth, Order, Catalog (FastAPI, MongoDB, Prometheus metrics)
-- **Prometheus Monitoring:** System, business, and HTTP metrics for all services
-- **AI Root Cause Analysis:** Ollama LLaMA 3 integration for incident analysis
-- **Structured Logging:** JSON logs, real-time log analysis, anomaly detection
-- **Comprehensive Dashboard:** Real-time health, metrics, analytics, logs, and AI insights
-- **Docker Compose Orchestration:** Easy local development and deployment
+- **Basic Metrics Collection**
+  - System metrics (CPU, memory)
+  - HTTP request metrics
+  - Custom application metrics
 
----
+- **Simple Dashboard**
+  - Service status overview
+  - Basic metrics visualization
+  - Log viewer
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-│ Auth Service  │   │ Order Service │   │ Catalog Svc   │
-│ 8001/8002     │   │ 8003/8004     │   │ 8005/8006     │
-└──────┬────────┘   └──────┬────────┘   └──────┬────────┘
-       │                   │                   │
-       └─────────────┬─────┴─────┬─────────────┘
-                     │           │
-             ┌───────▼───────────▼───────┐
-             │      MongoDB (27017)      │
-             └─────────────┬─────────────┘
-                           │
-                  ┌────────▼────────┐
-                  │  Prometheus     │
-                  │   (9090)        │
-                  └────────┬────────┘
-                           │
-         ┌─────────────────▼─────────────────┐
-         │ Monitoring Engine (8000)          │
-         │ Controller (traffic gen)          │
-         │ Frontend Dashboard (React)        │
-         └───────────────────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│                   Your Services                        │
+│  ─ Any language / framework                            │
+│  ─ Just expose /metrics endpoint                       │
+└───────────────▲───────────────────────────────────────┘
+                │
+                │ Prometheus scrape (HTTP pull)
+                │
+┌───────────────┴─────────────────┐
+│ Monitoring Platform              │
+│  ├─ FastAPI Backend               │
+│  │   - Service registration API   │
+│  │   - Metrics scraping logic     │
+│  │   - Data processing & alerts   │
+│  ├─ React Dashboard               │
+│      - Service status overview    │
+│      - Charts & logs              │
+└───────────────┬──────────────────┘
+                │
+                ▼
+┌─────────────────────────────┐
+│ Data Storage                 │
+│  - MongoDB                   │
+│  - Optional AI models (Ollama,groq)│
+└─────────────────────────────┘
+
 ```
 
----
+### How It Works
+1. **Service Registration**
+   - Services register via API
+   - Each service must expose a `/metrics` endpoint
 
-## 📦 Services Overview
+2. **Metrics Collection**
+   - The monitoring engine scrapes metrics
+   - Data is stored in MongoDB
 
-### Auth Service
+3. **Dashboard**
+   - View service status
+   - Basic metrics visualization
 
-- User registration & sign-in (JWT)
-- MongoDB for user storage
-- Prometheus metrics: auth attempts, JWTs, DB ops, system
-- `/register`, `/signin`, `/ping`, `/health`, `/metrics`
-
-### Order Service
-
-- Place and view orders (JWT required)
-- MongoDB for orders
-- Prometheus metrics: order ops, DB ops, system
-- `/api/v1/order`, `/api/v1/orders`, `/ping`, `/health`, `/metrics`
-
-### Catalog Service
-
-- Product catalog CRUD (JWT required)
-- MongoDB for products
-- Prometheus metrics: product ops, stock updates, DB ops, system
-- `/api/v1/add_product`, `/api/v1/update_stock`, `/api/v1/product`, `/api/v1/all_products`, `/ping`, `/health`, `/metrics`
-
-### Monitoring Engine
-
-- Aggregates logs, metrics, and Prometheus data
-- AI-powered root cause analysis via Ollama
-- Endpoints: `/api/health`, `/api/summary`, `/api/metrics`, `/api/performance`, `/api/analytics`, `/api/root_cause`, `/api/errors/analysis`, `/api/logs`, `/api/services`, `/api/ollama/test`
-
-### Controller
-
-- Generates synthetic traffic and error scenarios for testing
-
-### Frontend Dashboard
-
-- React app for real-time monitoring, analytics, logs, and AI insights
-- Auto-refresh, manual refresh, color-coded status, error toasts
-
----
-
-## 📊 Metrics Collected
-
-- **HTTP Metrics:** `http_requests_total`, `http_request_duration_seconds`, `response_time_ms`
-- **Business Metrics:** `auth_attempts_total`, `order_operations_total`, `product_operations_total`, `stock_updates_total`
-- **Database Metrics:** `db_operations_total`, `db_operation_duration_seconds`
-- **System Metrics:** `cpu_percent`, `memory_used_mb`, `process_start_time_seconds`
-- **Error Metrics:** `errors_total`, `error_types`, `order_404`, `http_500`, `auth_failures`
-- **JWT Metrics:** `jwt_tokens_issued_total`, `jwt_token_validations_total`
-
----
-
-## 🛠️ Setup & Usage
+## Quick Start
 
 ### Prerequisites
 
-- Docker & Docker Compose
+- Docker and Docker Compose
 - Python 3.8+
-- Ollama (for AI analysis, optional)
+- Node.js 16+ (for frontend development)
 
-### Quick Start
+### Setup
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd health-monitoring-auth_service_dev
+   cd Application_Performance_Monitor_Dynamic-master
    ```
-2. **Start all services**
+
+2. **Start the services**
    ```bash
-   docker-compose up --build
+   docker-compose up -d
    ```
-3. **Access the system:**
 
-   - **Frontend Dashboard:** http://localhost:8000
-   - **Prometheus:** http://localhost:9090
-   - **Mongo Express:** http://localhost:8081
-   - **Auth Service:** http://localhost:8001
-   - **Order Service:** http://localhost:8003
-   - **Catalog Service:** http://localhost:8005
+3. **Access the dashboard**
+   - Open http://localhost:8080 in your browser
 
-4. **Seed the catalog (optional):**
+### Register a Service
 
+1. **Expose metrics** in your service (example for Node.js with prom-client):
+   ```javascript
+   const express = require('express');
+   const client = require('prom-client');
+   
+   const app = express();
+   const register = new client.Registry();
+   
+   // Add default metrics
+   client.collectDefaultMetrics({ register });
+   
+   // Add a custom metric
+   const httpRequestCounter = new client.Counter({
+     name: 'http_requests_total',
+     help: 'Total HTTP requests',
+     labelNames: ['method', 'endpoint', 'status']
+   });
+   register.registerMetric(httpRequestCounter);
+   
+   // Expose metrics endpoint
+   app.get('/metrics', async (req, res) => {
+     res.set('Content-Type', register.contentType);
+     res.end(await register.metrics());
+   });
+   
+   app.listen(3000);
+   ```
+
+2. **Register your service** with the monitoring platform:
    ```bash
-   python seed_catalog.py
+   curl -X POST http://localhost:8080/api/services/register \
+     -H "Content-Type: application/json" \
+     -d '{"name": "my-service", "url": "http://your-service:3000"}'
    ```
 
-5. **Test endpoints:**
-   - Register/sign in, get a JWT, and use it for order/catalog APIs.
-   - Use `/api/root_cause` for AI analysis.
+## Supported Metrics
 
----
+The platform automatically collects standard Prometheus metrics from your services:
 
-## 🧑‍💻 API Endpoints
+### System Metrics
+- `process_cpu_seconds_total` - CPU usage
+- `process_resident_memory_bytes` - Memory usage
+- `process_open_fds` - Open file descriptors
+- `process_start_time_seconds` - Process start time
 
-### Monitoring Engine
+### HTTP Metrics
+- `http_requests_total` - Total HTTP requests
+- `http_request_duration_seconds` - Request duration histogram
+- `http_request_size_bytes` - Request size
+- `http_response_size_bytes` - Response size
 
-- `GET /api/health` — System health
-- `GET /api/summary` — Metrics summary
-- `GET /api/metrics` — Detailed metrics
-- `GET /api/performance` — Performance analytics
-- `GET /api/analytics` — Analytics
-- `GET /api/root_cause` — AI root cause analysis
-- `GET /api/errors/analysis` — Error analysis
-- `GET /api/logs` — Logs
-- `GET /api/services` — Per-service metrics
-- `GET /api/ollama/test` — Ollama diagnostics
+### Custom Metrics
+You can add any custom metrics using the Prometheus client library for your language
 
-### Auth Service
+## Configuration
 
-- `POST /register` — Register user
-- `POST /signin` — Sign in (returns JWT)
-- `GET /ping`, `GET /health`, `GET /metrics`
+Environment variables in `.env`:
+```
+# MongoDB
+MONGO_URI=mongodb://mongodb:27017/monitoring
 
-### Order Service
+# Prometheus
+PROMETHEUS_URL=http://prometheus:9090
 
-- `POST /api/v1/order` — Place order (JWT)
-- `GET /api/v1/orders` — List user orders (JWT)
-- `GET /ping`, `GET /health`, `GET /metrics`
+# Optional: Ollama for AI features
+OLLAMA_URL=http://host.docker.internal:11434
+OLLAMA_MODEL=llama3
 
-### Catalog Service
+# Optional: Email alerts
+SENDGRID_API_KEY=your-sendgrid-key
+ALERT_EMAIL_FROM=alerts@example.com
+ALERT_EMAIL_TO=admin@example.com
+```
 
-- `POST /api/v1/add_product` — Add product (JWT)
-- `POST /api/v1/update_stock` — Update stock (JWT)
-- `GET /api/v1/product` — Search products (JWT)
-- `GET /api/v1/all_products` — List all products (JWT)
-- `GET /ping`, `GET /health`, `GET /metrics`
+## Contributing
 
----
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 🔒 Security
+## License
 
-- JWT-based authentication for all protected endpoints
-- Secure password hashing (bcrypt)
-- Service-to-service authentication
-- Environment variable configuration
-
----
-
-## 📝 Logging & Debugging
-
-- All services log to `/app/logs/metrics.log` (mounted to `./logs`)
-- View logs in real time via dashboard or `docker logs <service>`
-- Prometheus logs: `docker logs prometheus`
-- Debug endpoints: `/api/debug/*`
-
----
-
-## 🤖 AI Root Cause Analysis
-
-- `/api/root_cause` and dashboard button use Ollama LLaMA 3 for incident analysis
-- Detects error spikes, latency anomalies, service-specific issues
-- Returns actionable recommendations
-
----
-
-## 🧪 Testing
-
-- Controller generates traffic and errors
-- Use `seed_catalog.py` to add products
-- Manual API testing with curl/Postman
-
----
-
-## ⚙️ Configuration
-
-- `.env` for secrets and DB URIs
-- `docker-compose.yaml` for service orchestration
-- `prometheus/prometheus.yml` for metrics scraping
-
----
-
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
